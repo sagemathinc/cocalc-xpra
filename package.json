@@ -15,5 +15,11 @@
   "bugs": {
     "url": "https://github.com/sagemathinc/cocalc-xpra/issues"
   },
-  "homepage": "https://github.com/sagemathinc/cocalc-xpra#readme"
+  "homepage": "https://github.com/sagemathinc/cocalc-xpra#readme",
+  "dependencies": {
+    "lz4": "^0.6.0",
+    "lz4js": "^0.2.0",
+    "node-forge": "^0.7.6",
+    "zlibjs": "^0.3.1"
+  }
 }
