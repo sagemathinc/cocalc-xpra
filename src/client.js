@@ -105,7 +105,9 @@ export const createClient = (defaultConfig = {}, env = {}) => {
   }, env);
 
   const bus = new EventHandler('XpraClient');
-  const connection = createConnectionGate(bus, env);
+  // TODO: for now skip using webworker, since need to be clear about where worker.js actually *is*....
+  //const connection = createConnectionGate(bus, env);
+  const connection = createConnection(bus);
   const {send} = connection;
 
   const ping = () => send('ping', timestamp());
