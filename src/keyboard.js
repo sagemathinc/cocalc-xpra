@@ -15,18 +15,19 @@ import {
   CHAR_TO_NAME,
   KEYSYM_TO_LAYOUT,
   DOM_KEY_LOCATION_RIGHT
-} from './constants.js';
+} from "./constants.js";
 
 const modifierMap = {
-  altKey: 'alt',
-  ctrlKey: 'control',
-  metaKey: 'meta',
-  shiftKey: 'shift'
+  altKey: "alt",
+  ctrlKey: "control",
+  metaKey: "meta",
+  shiftKey: "shift"
 };
 
-const getEventModifiers = ev => Object.keys(modifierMap)
-  .filter(key => ev[key])
-  .map(key => modifierMap[key]);
+const getEventModifiers = ev =>
+  Object.keys(modifierMap)
+    .filter(key => ev[key])
+    .map(key => modifierMap[key]);
 
 const translateModifiers = modifiers => {
   // TODO
@@ -36,11 +37,11 @@ const translateModifiers = modifiers => {
 const getModifiers = (ev, capsLock, numLock) => {
   const modifiers = getEventModifiers(event);
   if (capsLock) {
-    modifiers.push('lock');
+    modifiers.push("lock");
   }
 
   if (numLock) {
-    modifiers.push('numlock'); // FIXME
+    modifiers.push("numlock"); // FIXME
   }
 
   return translateModifiers(modifiers);
@@ -69,7 +70,7 @@ const getCapsLockState = (ev, shift) => {
 /**
  * Creates the keyboard input handler
  */
-export const createKeyboard = (send) => {
+export const createKeyboard = send => {
   const swapKeys = false; // TODO
   let capsLock = false;
   let numLock = false;
@@ -81,9 +82,9 @@ export const createKeyboard = (send) => {
     const topwindow = surface ? surface.wid : 0;
     const rawModifiers = getEventModifiers(ev);
     const modifiers = getMods(ev);
-    const shift = modifiers.includes('shift');
+    const shift = modifiers.includes("shift");
 
-    if (ev.type === 'keydown' || ev.type === 'keyup') {
+    if (ev.type === "keydown" || ev.type === "keyup") {
       const keycode = ev.which || event.keyCode;
 
       // this usually fires when we have received the event via "oninput" already
@@ -92,7 +93,7 @@ export const createKeyboard = (send) => {
       }
 
       const group = 0;
-      const pressed = ev.type === 'keydown';
+      const pressed = ev.type === "keydown";
 
       // sync numlock
       if (keycode === 144 && pressed) {
@@ -100,11 +101,11 @@ export const createKeyboard = (send) => {
       }
 
       let str = event.key || String.fromCharCode(keycode);
-      let keyname = ev.code || '';
+      let keyname = ev.code || "";
 
       if (keyname != str && str in NUMPAD_TO_NAME) {
         keyname = NUMPAD_TO_NAME[str];
-        numLock = '0123456789.'.includes(keyname);
+        numLock = "0123456789.".includes(keyname);
       } else if (keyname in KEY_TO_NAME) {
         // some special keys are better mapped by name:
         keyname = KEY_TO_NAME[keyname];
@@ -124,52 +125,73 @@ export const createKeyboard = (send) => {
         keyname = CHARCODE_TO_NAME[keycode];
       }
 
-      if (keyname.match('_L$') && ev.location === DOM_KEY_LOCATION_RIGHT) {
-        keyname = keyname.replace('_L', '_R');
+      if (keyname.match("_L$") && ev.location === DOM_KEY_LOCATION_RIGHT) {
+        keyname = keyname.replace("_L", "_R");
       }
 
       // AltGr: keep track of pressed state
-      if (str == 'AltGraph' || (keyname === 'Alt_R' && IS_WIN32)) {
+      if (str == "AltGraph" || (keyname === "Alt_R" && IS_WIN32)) {
         altGr = pressed;
-        keyname = 'ISO_Level3_Shift';
-        str = 'AltGraph';
+        keyname = "ISO_Level3_Shift";
+        str = "AltGraph";
       }
 
       if ((capsLock && shift) || (!capsLock && !shift)) {
         str = str.toLowerCase();
       }
 
-
       const oldStr = str;
       if (swapKeys) {
-        if (keyname === 'Control_L') {
-          keyname = 'Meta_L';
-          str = 'meta';
-        }
-        else if (keyname === 'Meta_L') {
-          keyname = 'Control_L';
-          str = 'control';
-        }
-        else if (keyname === 'Control_R') {
-          keyname = 'Meta_R';
-          str = 'meta';
-        }
-        else if (keyname === 'Meta_R') {
-          keyname = 'Control_R';
-          str = 'control';
+        if (keyname === "Control_L") {
+          keyname = "Meta_L";
+          str = "meta";
+        } else if (keyname === "Meta_L") {
+          keyname = "Control_L";
+          str = "control";
+        } else if (keyname === "Control_R") {
+          keyname = "Meta_R";
+          str = "meta";
+        } else if (keyname === "Meta_R") {
+          keyname = "Control_R";
+          str = "control";
         }
       }
 
-      send('key-action', topwindow, keyname, pressed, modifiers, keycode, str, keycode, group);
+      send(
+        "key-action",
+        topwindow,
+        keyname,
+        pressed,
+        modifiers,
+        keycode,
+        str,
+        keycode,
+        group
+      );
 
       // macos will swallow the key release event if the meta modifier is pressed,
       // so simulate one immediately:
-      if (pressed && swapKeys && rawModifiers.includes('meta') && oldStr !== 'meta') {
-        send('key-action', topwindow, keyname, false, modifiers, keycode, str, keycode, group);
+      if (
+        pressed &&
+        swapKeys &&
+        rawModifiers.includes("meta") &&
+        oldStr !== "meta"
+      ) {
+        send(
+          "key-action",
+          topwindow,
+          keyname,
+          false,
+          modifiers,
+          keycode,
+          str,
+          keycode,
+          group
+        );
       }
 
       return true;
-    } else if (ev.type === 'keypress') {
+    } else if (ev.type === "keypress") {
       capsLock = getCapsLockState(ev, shift);
 
       return true;
@@ -178,5 +200,5 @@ export const createKeyboard = (send) => {
     return false;
   };
 
-  return {modifiers: getMods, process};
+  return { modifiers: getMods, process };
 };

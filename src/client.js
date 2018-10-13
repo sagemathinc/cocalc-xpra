@@ -7,15 +7,15 @@
  * @author Anders Evenrud <andersevenrud@gmail.com>
  */
 
-import {EventHandler} from './eventhandler.js';
-import {getCapabilities} from './capabilities.js';
-import {createRenderer} from './renderer.js';
-import {createKeyboard} from './keyboard.js';
-import {createMouse} from './mouse.js';
+import { EventHandler } from "./eventhandler.js";
+import { getCapabilities } from "./capabilities.js";
+import { createRenderer } from "./renderer.js";
+import { createKeyboard } from "./keyboard.js";
+import { createMouse } from "./mouse.js";
 //import {createSound, enumSoundCodecs} from './sound.js';
-import {createConnection} from './connection/null.js';
-import {iconRenderer} from './renderer/icon.js';
-import {PING_FREQUENCY} from './constants.js';
+import { createConnection } from "./connection/null.js";
+import { iconRenderer } from "./renderer/icon.js";
+import { PING_FREQUENCY } from "./constants.js";
 import {
   hexUUID,
   calculateDPI,
@@ -23,62 +23,82 @@ import {
   timestamp,
   generateSalt,
   generateDigest
-} from './util.js';
+} from "./util.js";
 
 /**
  * Creates a configuration
  */
-const createConfiguration = (defaults = {}, append = {}) => Object.assign({
-  uuid: hexUUID(),
-  uri: 'ws://localhost:10000',
-  /* audio_framework: null, */
-  audio_codec_blacklist: [],
-  audio_codecs: [],
-  image_codecs: [],
-  screen: [window.innerWidth, window.innerHeight],
-  dpi: calculateDPI(),
-  compression_level: 1,
-  reconnect: true,
-  notifications: true,
-  clipboard: false,
-  //sound: true,
-  bell: true,
-  printing: false, // FIXME
-  transfer: false, // FIXME
-  keyboard: true,
-  share: true,
-  steal: true,
-  language: null, // auto
-  username: '',
-  password: '',
-  zlib: true,
-  lz4: true
-}, defaults, append);
+const createConfiguration = (defaults = {}, append = {}) =>
+  Object.assign(
+    {
+      uuid: hexUUID(),
+      uri: "ws://localhost:10000",
+      /* audio_framework: null, */
+      audio_codec_blacklist: [],
+      audio_codecs: [],
+      image_codecs: [],
+      screen: [window.innerWidth, window.innerHeight],
+      dpi: calculateDPI(),
+      compression_level: 1,
+      reconnect: true,
+      notifications: true,
+      clipboard: false,
+      //sound: true,
+      bell: true,
+      printing: false, // FIXME
+      transfer: false, // FIXME
+      keyboard: true,
+      share: true,
+      steal: true,
+      language: null, // auto
+      username: "",
+      password: "",
+      zlib: true,
+      lz4: true
+    },
+    defaults,
+    append
+  );
 
 /**
  * Creates a render surface
  */
 const createSurface = (parent, wid, x, y, w, h, metadata, properties, send) => {
   const overlay = !!parent;
-  const canvas = document.createElement('canvas');
+  const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
 
-  const context = canvas.getContext('2d');
-  const renderer = createRenderer({wid, canvas, context}, send);
+  const context = canvas.getContext("2d");
+  const renderer = createRenderer({ wid, canvas, context }, send);
   const draw = (...args) => renderer.push(...args);
   const updateMetadata = meta => Object.assign(metadata, meta);
   const destroy = () => renderer.stop();
 
-  return {wid, x, y, w, h, parent, overlay, canvas, context, metadata, properties, draw, updateMetadata, destroy};
+  return {
+    wid,
+    x,
+    y,
+    w,
+    h,
+    parent,
+    overlay,
+    canvas,
+    context,
+    metadata,
+    properties,
+    draw,
+    updateMetadata,
+    destroy
+  };
 };
 
 const createConnectionGate = (bus, env) => {
   if (window.Worker) {
     const worker = new Worker(env.worker);
 
-    worker.onmessage = ({data}) => {
-      if (data.event === 'data') {
+    worker.onmessage = ({ data }) => {
+      if (data.event === "data") {
         bus.emit(...data.args);
       } else {
         bus.emit(data.event, ...data.args);
@@ -86,10 +106,10 @@ const createConnectionGate = (bus, env) => {
     };
 
     return {
-      send: (...packet) => worker.postMessage({command: 'send', packet}),
-      close: () => worker.postMessage({command: 'close'}),
-      open: config => worker.postMessage({command: 'open', config}),
-      flush: () => worker.postMessage({command: 'flush'})
+      send: (...packet) => worker.postMessage({ command: "send", packet }),
+      close: () => worker.postMessage({ command: "close" }),
+      open: config => worker.postMessage({ command: "open", config }),
+      flush: () => worker.postMessage({ command: "flush" })
     };
   }
 
@@ -100,17 +120,20 @@ const createConnectionGate = (bus, env) => {
  * Creates a new Xpra client
  */
 export const createClient = (defaultConfig = {}, env = {}) => {
-  env = Object.assign({
-    worker: 'worker.js',
-  }, env);
+  env = Object.assign(
+    {
+      worker: "worker.js"
+    },
+    env
+  );
 
-  const bus = new EventHandler('XpraClient');
+  const bus = new EventHandler("XpraClient");
   // TODO: for now skip using webworker, since need to be clear about where worker.js actually *is*....
   //const connection = createConnectionGate(bus, env);
   const connection = createConnection(bus);
-  const {send} = connection;
+  const { send } = connection;
 
-  const ping = () => send('ping', timestamp());
+  const ping = () => send("ping", timestamp());
   const keyboard = createKeyboard(send);
   const mouse = createMouse(send, keyboard);
   //const sound = createSound(send);
@@ -124,7 +147,7 @@ export const createClient = (defaultConfig = {}, env = {}) => {
   let surfaces = [];
   let activeWindow = 0;
   let lastActiveWindow = 0;
-  let audioCodecs = {codecs:[]};
+  let audioCodecs = { codecs: [] };
 
   const states = {
     reconnecting: () => reconnecting,
@@ -132,30 +155,30 @@ export const createClient = (defaultConfig = {}, env = {}) => {
     connected: () => connected
   };
 
-  const getState = () => Object.keys(states)
-    .find(key => states[key]() === true) || 'disconnected';
+  const getState = () =>
+    Object.keys(states).find(key => states[key]() === true) || "disconnected";
 
-  const emitState = () => bus.emit('ws:status', getState());
+  const emitState = () => bus.emit("ws:status", getState());
 
   const findSurface = wid => surfaces.find(s => s.wid === wid);
 
-  const focus = (wid) => {
+  const focus = wid => {
     const found = findSurface(wid);
     if (found) {
       if (activeWindow !== wid) {
-        send('focus', wid, []);
+        send("focus", wid, []);
       }
 
       activeWindow = wid;
 
-      bus.emit('window:focus', {wid});
+      bus.emit("window:focus", { wid });
     } else {
       activeWindow = 0;
     }
   };
 
   // Closes connection
-  const disconnect = (closing) => {
+  const disconnect = closing => {
     connected = false;
     connecting = false;
 
@@ -191,7 +214,7 @@ export const createClient = (defaultConfig = {}, env = {}) => {
       return;
     }
 
-    if (typeof wid === 'undefined') {
+    if (typeof wid === "undefined") {
       wid = activeWindow;
     }
 
@@ -201,14 +224,25 @@ export const createClient = (defaultConfig = {}, env = {}) => {
   };
 
   // Kills a window/surface
-  const kill =  (wid) => {
+  const kill = wid => {
     if (findSurface(wid)) {
-      send('close-window', wid);
+      send("close-window", wid);
     }
   };
 
   // Sends a draw event to surface
-  const render = (wid, x, y, w, h, coding, data, sequence, rowstride, options = {}) => {
+  const render = (
+    wid,
+    x,
+    y,
+    w,
+    h,
+    coding,
+    data,
+    sequence,
+    rowstride,
+    options = {}
+  ) => {
     const found = findSurface(wid);
     if (found) {
       found.draw(x, y, w, h, coding, data, sequence, rowstride, options);
@@ -216,10 +250,18 @@ export const createClient = (defaultConfig = {}, env = {}) => {
   };
 
   const log = (name, level) => (...args) => {
-    if (connected && serverCapabilities && serverCapabilities['remote-logging.multi-line']) {
-      send('logging', level, args.map(str => {
-        return unescape(encodeURIComponent(String(str)));
-      }));
+    if (
+      connected &&
+      serverCapabilities &&
+      serverCapabilities["remote-logging.multi-line"]
+    ) {
+      send(
+        "logging",
+        level,
+        args.map(str => {
+          return unescape(encodeURIComponent(String(str)));
+        })
+      );
     } else {
       console[name](...args);
     }
@@ -231,56 +273,56 @@ export const createClient = (defaultConfig = {}, env = {}) => {
       clearTimeout(debounce);
       debounce = setTimeout(() => {
         const sizes = calculateScreens(w, h, config.dpi);
-        send('desktop_size', w, h, sizes);
+        send("desktop_size", w, h, sizes);
       }, 100);
     };
   })();
 
   const serverConsole = {
-    error: log('error', 40),
-    warn: log('warn', 30),
-    log: log('log', 20),
-    info: log('info', 20),
-    debug: log('debug', 10)
+    error: log("error", 40),
+    warn: log("warn", 30),
+    log: log("log", 20),
+    info: log("info", 20),
+    debug: log("debug", 10)
   };
 
   // WebSocket actions
 
-  bus.on('ws:open', () => {
+  bus.on("ws:open", () => {
     //audioCodecs = enumSoundCodecs(config);
-    clientCapabilities = getCapabilities(config,audioCodecs.codecs);
+    clientCapabilities = getCapabilities(config, audioCodecs.codecs);
 
-    console.debug('!!!', {config, audioCodecs, clientCapabilities});
+    console.debug("!!!", { config, audioCodecs, clientCapabilities });
 
     const capabilities = Object.assign({}, clientCapabilities);
     if (config.username || config.password) {
       capabilities.challenge = true;
     }
 
-    send('hello', capabilities);
+    send("hello", capabilities);
   });
 
-  bus.on('ws:close', () => disconnect(true));
+  bus.on("ws:close", () => disconnect(true));
 
   // Xpra actions
-  bus.on('disconnect', () => disconnect(true)); // TODO: Reconnect
+  bus.on("disconnect", () => disconnect(true)); // TODO: Reconnect
 
-  bus.on('hello', (cap) => (serverCapabilities = cap));
+  bus.on("hello", cap => (serverCapabilities = cap));
 
-  bus.on('ping', (time) => send('ping_echo', time, 0, 0, 0, 0));
+  bus.on("ping", time => send("ping_echo", time, 0, 0, 0, 0));
 
-  bus.on('challenge', (serverSalt, foo, digest, saltDigest) => {
+  bus.on("challenge", (serverSalt, foo, digest, saltDigest) => {
     // TODO: Proto
     // FIXME: Don't use xor on non-ssl
-    saltDigest = saltDigest || 'xor';
+    saltDigest = saltDigest || "xor";
 
-    console.debug('--- challenge', {serverSalt, digest, saltDigest});
+    console.debug("--- challenge", { serverSalt, digest, saltDigest });
 
     try {
       const clientSalt = generateSalt(saltDigest, serverSalt);
       const salt = generateDigest(saltDigest, clientSalt, serverSalt);
       if (!salt) {
-        throw new Error('Invalid challenge salt digest: ' + saltDigest);
+        throw new Error("Invalid challenge salt digest: " + saltDigest);
       }
 
       const response = generateDigest(digest, config.password, salt);
@@ -292,9 +334,9 @@ export const createClient = (defaultConfig = {}, env = {}) => {
 
         const capabilities = Object.assign({}, clientCapabilities, append);
 
-        send('hello', capabilities);
+        send("hello", capabilities);
       } else {
-        throw new Error('Invalid challenge digest: ' + digest);
+        throw new Error("Invalid challenge digest: " + digest);
       }
     } catch (e) {
       console.error(e);
@@ -302,39 +344,59 @@ export const createClient = (defaultConfig = {}, env = {}) => {
     }
   });
 
-  bus.on('window-metadata', (wid, metadata = {}) => {
+  bus.on("window-metadata", (wid, metadata = {}) => {
     const surface = findSurface(wid);
     if (surface) {
       surface.updateMetadata(metadata);
-      bus.emit('window:metadata', surface);
+      bus.emit("window:metadata", surface);
     }
   });
 
-  bus.on('new-window', (wid, x, y, w, h, metadata, properties) => {
+  bus.on("new-window", (wid, x, y, w, h, metadata, properties) => {
     lastActiveWindow = 0;
 
     const props = Object.assign({}, properties || {}, {
-      'encodings.rgb_formats': clientCapabilities['encodings.rgb_formats']
+      "encodings.rgb_formats": clientCapabilities["encodings.rgb_formats"]
     });
 
-    send('map-window', wid, x, y, w, h, props);
-    send('focus', [], wid);
+    send("map-window", wid, x, y, w, h, props);
+    send("focus", [], wid);
 
-    const surface = createSurface(false, wid, x, y, w, h, metadata, properties, send);
+    const surface = createSurface(
+      false,
+      wid,
+      x,
+      y,
+      w,
+      h,
+      metadata,
+      properties,
+      send
+    );
     surfaces.push(surface);
 
-    bus.emit('window:create', surface);
+    bus.emit("window:create", surface);
     focus(wid);
   });
 
-  bus.on('new-override-redirect', (wid, x, y, w, h, metadata, properties) => {
-    const parentWid = metadata['transient-for'];
+  bus.on("new-override-redirect", (wid, x, y, w, h, metadata, properties) => {
+    const parentWid = metadata["transient-for"];
 
     const parent = parentWid ? findSurface(parentWid) : false;
     if (parent) {
-      const surface = createSurface(parent, wid, x, y, w, h, metadata, properties, send);
+      const surface = createSurface(
+        parent,
+        wid,
+        x,
+        y,
+        w,
+        h,
+        metadata,
+        properties,
+        send
+      );
 
-      bus.emit('overlay:create', {parent, wid, x, y, canvas: surface.canvas});
+      bus.emit("overlay:create", { parent, wid, x, y, canvas: surface.canvas });
 
       surfaces.push(surface);
       lastActiveWindow = parentWid;
@@ -343,17 +405,17 @@ export const createClient = (defaultConfig = {}, env = {}) => {
     }
   });
 
-  bus.on('lost-window', (wid) => {
+  bus.on("lost-window", wid => {
     const surface = findSurface(wid);
 
     if (surface) {
       if (surface.overlay) {
-        bus.emit('overlay:destroy', surface);
+        bus.emit("overlay:destroy", surface);
       } else {
         if (activeWindow === wid) {
-          bus.emit('window:blur', {wid});
+          bus.emit("window:blur", { wid });
         }
-        bus.emit('window:destroy', surface);
+        bus.emit("window:destroy", surface);
       }
 
       surface.destroy();
@@ -367,20 +429,20 @@ export const createClient = (defaultConfig = {}, env = {}) => {
     }
   });
 
-  bus.on('window-icon', (wid, w, h, coding, data) => {
-    const src = iconRenderer({coding, data});
+  bus.on("window-icon", (wid, w, h, coding, data) => {
+    const src = iconRenderer({ coding, data });
     if (src) {
-      bus.emit('window:icon', {wid, src});
+      bus.emit("window:icon", { wid, src });
     }
   });
 
-  bus.on('startup-complete', () => {
-    bus.emit('system:started');
+  bus.on("startup-complete", () => {
+    bus.emit("system:started");
 
     connected = true;
     connecting = false;
 
-    serverConsole.info('Xpra HTML5 Client connected');
+    serverConsole.info("Xpra HTML5 Client connected");
     emitState();
 
     /* if (config.sound) {
@@ -388,36 +450,58 @@ export const createClient = (defaultConfig = {}, env = {}) => {
     }*/
   });
 
-  bus.on('sound-data', (codec, buffer, options, metadata) => {
+  bus.on("sound-data", (codec, buffer, options, metadata) => {
     //sound.process(codec, buffer, options, metadata);
   });
 
-  bus.on('notify_show', (busId, notificationId, replacesId, summary, body, timeout, icon, actions, hints) => {
-    bus.emit('notification:create', notificationId, {busId, replacesId, summary, body, timeout, icon, actions, hints});
+  bus.on(
+    "notify_show",
+    (
+      busId,
+      notificationId,
+      replacesId,
+      summary,
+      body,
+      timeout,
+      icon,
+      actions,
+      hints
+    ) => {
+      bus.emit("notification:create", notificationId, {
+        busId,
+        replacesId,
+        summary,
+        body,
+        timeout,
+        icon,
+        actions,
+        hints
+      });
+    }
+  );
+
+  bus.on("notify_show", notificationId => {
+    bus.emit("notification:destroy", notificationId);
   });
 
-  bus.on('notify_show', (notificationId) => {
-    bus.emit('notification:destroy', notificationId);
-  });
-
-  bus.on('send-file', (filename, mime, print, size, data) => {
+  bus.on("send-file", (filename, mime, print, size, data) => {
     if (data.length !== size) {
-      console.warn('Invalid file', filename, mime, size);
+      console.warn("Invalid file", filename, mime, size);
       return;
     }
 
     if (print) {
-      bus.emit('system:print', {filename, mime, size}, data);
+      bus.emit("system:print", { filename, mime, size }, data);
     } else {
-      bus.emit('system:upload', {filename, mime, size}, data);
+      bus.emit("system:upload", { filename, mime, size }, data);
     }
   });
 
-  bus.on('open-url', () => bus.emit('system:url'));
-  bus.on('bell', () => bus.emit('system:bell'));
+  bus.on("open-url", () => bus.emit("system:url"));
+  bus.on("bell", () => bus.emit("system:bell"));
 
-  bus.on('eos', render);
-  bus.on('draw', render);
+  bus.on("eos", render);
+  bus.on("draw", render);
 
   // Make sure to ping the server
   setInterval(() => {
@@ -447,6 +531,6 @@ export const createClient = (defaultConfig = {}, env = {}) => {
     surface: {
       focus,
       kill
-    },
+    }
   });
 };

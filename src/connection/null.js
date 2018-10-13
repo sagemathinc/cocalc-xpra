@@ -6,24 +6,24 @@
  *
  * @author Anders Evenrud <andersevenrud@gmail.com>
  */
-import {createReceiveQueue, createSendQueue} from '../protocol.js';
+import { createReceiveQueue, createSendQueue } from "../protocol.js";
 
 const createWebsocket = (uri, bus) => {
-  const socket = new WebSocket(uri, 'binary');
+  const socket = new WebSocket(uri, "binary");
 
-  socket.binaryType = 'arraybuffer';
-  socket.onopen = ev => bus.emit('ws:open', ev);
-  socket.onclose = ev => bus.emit('ws:close', ev);
-  socket.onerror = ev => bus.emit('ws:error', ev);
+  socket.binaryType = "arraybuffer";
+  socket.onopen = ev => bus.emit("ws:open", ev);
+  socket.onclose = ev => bus.emit("ws:close", ev);
+  socket.onerror = ev => bus.emit("ws:error", ev);
   socket.onmessage = ev => {
     const data = new Uint8Array(ev.data);
-    bus.emit('ws:data', ev, data);
+    bus.emit("ws:data", ev, data);
   };
 
   return socket;
 };
 
-export const createConnection = (bus) => {
+export const createConnection = bus => {
   let socket;
 
   const receiveQueue = createReceiveQueue((...args) => bus.emit(...args));
@@ -35,7 +35,7 @@ export const createConnection = (bus) => {
     receiveQueue.clear();
   };
 
-  const open = (config) => {
+  const open = config => {
     socket = createWebsocket(config.uri, bus);
   };
 
@@ -46,7 +46,7 @@ export const createConnection = (bus) => {
     socket = null;
   };
 
-  bus.on('ws:data', (ev, packet) => receiveQueue.push(packet, socket));
+  bus.on("ws:data", (ev, packet) => receiveQueue.push(packet, socket));
 
-  return {send, close, open, flush};
+  return { send, close, open, flush };
 };

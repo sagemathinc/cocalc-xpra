@@ -7,17 +7,19 @@
  * @author Anders Evenrud <andersevenrud@gmail.com>
  */
 
-import zlib from 'zlibjs';
-import {ord, lz4decode} from './util.js';
-import {bencode, bdecode} from './bencode.js';
-import {HEADER_SIZE} from './constants.js';
+import zlib from "zlibjs";
+import { ord, lz4decode } from "./util.js";
+import { bencode, bdecode } from "./bencode.js";
+import { HEADER_SIZE } from "./constants.js";
 
 const debug = (...args) => {
-  if (args[1].match(/^(ping|pointer|button|cursor|draw|damage|sound-data)/) === null) {
+  if (
+    args[1].match(/^(ping|pointer|button|cursor|draw|damage|sound-data)/) ===
+    null
+  ) {
     console.debug(...args);
   }
 };
-
 
 /**
  * Inflates compressed data
@@ -25,11 +27,14 @@ const debug = (...args) => {
 const inflate = (level, size, data) => {
   if (level !== 0) {
     if (level & 0x10) {
-      const {inflated, uncompressedSize} = lz4decode(data);
+      const { inflated, uncompressedSize } = lz4decode(data);
 
       // if lz4 errors out at the end of the buffer, ignore it:
-      if (uncompressedSize <= 0 && (size + uncompressedSize) !== 0) {
-        console.error('failed to decompress lz4 data, error code', uncompressedSize);
+      if (uncompressedSize <= 0 && size + uncompressedSize !== 0) {
+        console.error(
+          "failed to decompress lz4 data, error code",
+          uncompressedSize
+        );
         return null;
       }
 
@@ -51,7 +56,7 @@ const decode = (inflated, rawQueue) => {
     packet[index] = rawQueue[index];
   }
 
-  if((packet[0] === 'draw') && (packet[6] !== 'scroll')) {
+  if (packet[0] === "draw" && packet[6] !== "scroll") {
     const uint = imageData(packet[7]);
     if (uint !== null) {
       packet[7] = uint;
@@ -65,10 +70,10 @@ const decode = (inflated, rawQueue) => {
  * Gets a Uint8 draw data
  */
 const imageData = data => {
-  if (typeof data === 'string') {
+  if (typeof data === "string") {
     const uint = new Uint8Array(data.length);
 
-    for(let i = 0, j = data.length; i < j; ++i) {
+    for (let i = 0, j = data.length; i < j; ++i) {
       uint[i] = data.charCodeAt(i);
     }
 
@@ -90,19 +95,19 @@ const parsePacket = (header, queue) => {
   };
 
   if (proto.flags !== 0 && !proto.crypto) {
-    console.error('we can\'t handle this protocol flag yet', proto);
+    console.error("we can't handle this protocol flag yet", proto);
     return false;
   }
 
   const level = header[2];
   if (level & 0x20) {
-    console.error('lzo compression is not supported');
+    console.error("lzo compression is not supported");
     return false;
   }
 
   const index = header[3];
   if (index >= 20) {
-    console.error('Invalid packet index', index);
+    console.error("Invalid packet index", index);
     return false;
   }
 
@@ -130,13 +135,13 @@ const parsePacket = (header, queue) => {
     return false;
   }
 
-  return {index, level, proto, packetSize};
+  return { index, level, proto, packetSize };
 };
 
 /**
  * Serializes an outgoing packet
  */
-const serializePacket = (data) => {
+const serializePacket = data => {
   const level = 0; // TODO: zlib, but does not work
   const proto_flags = 0;
 
@@ -153,11 +158,11 @@ const serializePacket = (data) => {
   */
 
   const size = data.length;
-  const send = data.split('').map(ord);
-  const header = [ord('P'), proto_flags, level, 0];
+  const send = data.split("").map(ord);
+  const header = [ord("P"), proto_flags, level, 0];
 
   for (let i = 3; i >= 0; i--) {
-    header.push((size >> (8 * i)) & 0xFF);
+    header.push((size >> (8 * i)) & 0xff);
   }
 
   return [...header, ...send];
@@ -166,7 +171,7 @@ const serializePacket = (data) => {
 /**
  * Creates a new receieve queue handler
  */
-export const createReceiveQueue = (callback) => {
+export const createReceiveQueue = callback => {
   let queue = [];
   let header = [];
   let rawQueue = [];
@@ -186,15 +191,13 @@ export const createReceiveQueue = (callback) => {
         // replace the slice with what is left over:
         if (slice.length > needed) {
           queue[0] = slice.subarray(num);
-        }
-
-        // this slice has been fully consumed already:
-        else {
+        } else {
+          // this slice has been fully consumed already:
           queue.shift();
         }
 
-        if (header[0] !== ord('P')) {
-          console.error('Invalid packet header format', header, ord('P'));
+        if (header[0] !== ord("P")) {
+          console.error("Invalid packet header format", header, ord("P"));
           return false;
         }
       }
@@ -214,10 +217,8 @@ export const createReceiveQueue = (callback) => {
     // exact match: the payload is in a buffer already:
     if (queue[0].length === packetSize) {
       packetData = queue.shift();
-    }
-
-    // aggregate all the buffers into "packet_data" until we get exactly "packet_size" bytes:
-    else {
+    } else {
+      // aggregate all the buffers into "packet_data" until we get exactly "packet_size" bytes:
       packetData = new Uint8Array(packetSize);
 
       let rsize = 0;
@@ -230,10 +231,8 @@ export const createReceiveQueue = (callback) => {
           packetData.set(slice.subarray(0, needed), rsize);
           rsize += needed;
           queue[0] = slice.subarray(needed);
-        }
-
-        // add this slice in full
-        else {
+        } else {
+          // add this slice in full
           packetData.set(slice, rsize);
           rsize += slice.length;
           queue.shift();
@@ -268,27 +267,24 @@ export const createReceiveQueue = (callback) => {
 
     header = [];
 
-    const {index, level, proto, packetSize} = result;
+    const { index, level, proto, packetSize } = result;
     const inflated = processData(level, proto, packetSize);
 
     // save it for later? (partial raw packet)
     if (index > 0) {
       rawQueue[index] = inflated;
-    }
-
-    // decode raw packet string into objects:
-    else {
+    } else {
+      // decode raw packet string into objects:
       try {
         const packet = decode(inflated, rawQueue);
 
-        debug('<<<', ...packet);
+        debug("<<<", ...packet);
 
         callback(...packet);
 
         rawQueue = [];
-      }
-      catch (e) {
-        console.error('error decoding packet', e);
+      } catch (e) {
+        console.error("error decoding packet", e);
         return false;
       }
     }
@@ -321,7 +317,7 @@ export const createSendQueue = () => {
         continue;
       }
 
-      debug('>>>', ...packet);
+      debug(">>>", ...packet);
 
       const data = bencode(packet);
       const pkg = serializePacket(data);

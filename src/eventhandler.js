@@ -32,9 +32,12 @@
  * Gets an array of event names based in input,
  * be it array or a comma separated string.
  */
-const getEventNames = name => (name instanceof Array)
-  ? name
-  : String(name).replace(/\s+/g, '').split(',');
+const getEventNames = name =>
+  name instanceof Array
+    ? name
+    : String(name)
+        .replace(/\s+/g, "")
+        .split(",");
 
 /**
  * Event Handler
@@ -42,12 +45,11 @@ const getEventNames = name => (name instanceof Array)
  * @desc A standards compatible event handler (observer) with some sugar.
  */
 export class EventHandler {
-
   /**
    * Create Event Handler
    * @param {String} [name] A name for logging
    */
-  constructor(name = 'undefined') {
+  constructor(name = "undefined") {
     /**
      * The name of the handler
      * @type {String}
@@ -82,8 +84,8 @@ export class EventHandler {
   on(name, callback, options = {}) {
     options = options || {};
 
-    if (typeof callback !== 'function') {
-      throw new TypeError('Invalid callback');
+    if (typeof callback !== "function") {
+      throw new TypeError("Invalid callback");
     }
 
     getEventNames(name).forEach(n => {
@@ -91,7 +93,7 @@ export class EventHandler {
         this.events[n] = [];
       }
 
-      this.events[n].push({callback, options});
+      this.events[n].push({ callback, options });
     });
 
     return this;
@@ -125,7 +127,7 @@ export class EventHandler {
         } else {
           this.events[n] = force
             ? []
-            : this.events[n].filter(({options}) => options.persist !== true);
+            : this.events[n].filter(({ options }) => options.persist !== true);
         }
       });
 
@@ -144,11 +146,10 @@ export class EventHandler {
   emit(name, ...args) {
     getEventNames(name).forEach(n => {
       if (this.events[n]) {
-        this.events[n].forEach(({callback}) => callback(...args));
+        this.events[n].forEach(({ callback }) => callback(...args));
       }
     });
 
     return this;
   }
-
 }
