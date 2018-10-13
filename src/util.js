@@ -7,7 +7,7 @@
  * @author Anders Evenrud <andersevenrud@gmail.com>
  */
 
-import lz4 from 'lz4';
+import lz4 from 'lz4js';
 import forge from 'node-forge';
 import {CHUNK_SZ, DEFAULT_DPI} from './constants.js';
 

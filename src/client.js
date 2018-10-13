@@ -7,7 +7,7 @@
  * @author Anders Evenrud <andersevenrud@gmail.com>
  */
 
-import {EventHandler} from '../lib/eventhandler.js';
+import {EventHandler} from './eventhandler.js';
 import {getCapabilities} from './capabilities.js';
 import {createRenderer} from './renderer.js';
 import {createKeyboard} from './keyboard.js';

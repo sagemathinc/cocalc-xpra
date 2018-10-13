@@ -9,7 +9,7 @@
 
 import zlib from 'zlibjs';
 import {ord, lz4decode} from './util.js';
-import {bencode, bdecode} from '../lib/bencode.js';
+import {bencode, bdecode} from './bencode.js';
 import {HEADER_SIZE} from './constants.js';
 
 const debug = (...args) => {
