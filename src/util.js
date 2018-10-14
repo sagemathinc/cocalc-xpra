@@ -7,7 +7,6 @@
  * @author Anders Evenrud <andersevenrud@gmail.com>
  */
 
-import lz4 from "lz4js";
 import forge from "node-forge";
 import { CHUNK_SZ, DEFAULT_DPI } from "./constants.js";
 
@@ -111,6 +110,7 @@ export const arraybufferBase64 = (uintArray, skip = 10400) => {
 
 // python-lz4 inserts the length of the uncompressed data as an int
 // at the start of the stream
+/*
 export const lz4decode = data => {
   const d = data.subarray(0, 4);
 
@@ -123,6 +123,7 @@ export const lz4decode = data => {
 
   return { uncompressedSize, inflated };
 };
+*/
 
 export const strToUint8 = str => {
   let u8a = new Uint8Array(str.length);

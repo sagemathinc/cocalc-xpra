@@ -8,7 +8,7 @@
  */
 
 import zlib from "zlibjs";
-import { ord, lz4decode } from "./util.js";
+import { ord } from "./util.js";
 import { bencode, bdecode } from "./bencode.js";
 import { HEADER_SIZE } from "./constants.js";
 
@@ -27,7 +27,9 @@ const debug = (...args) => {
 const inflate = (level, size, data) => {
   if (level !== 0) {
     if (level & 0x10) {
-      const { inflated, uncompressedSize } = lz4decode(data);
+      console.error("lz4 compression not supported");
+      return null;
+      //const { inflated, uncompressedSize } = lz4decode(data);
 
       // if lz4 errors out at the end of the buffer, ignore it:
       if (uncompressedSize <= 0 && size + uncompressedSize !== 0) {
