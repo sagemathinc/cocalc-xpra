@@ -208,8 +208,23 @@ export const createClient = (defaultConfig = {}, env = {}) => {
     connection.open(config);
   };
 
-  // Injects a browser event
-  const inject = (ev, wid) => {
+  // Injects a key browser event
+  const key_inject = (ev, wid) => {
+    if (!connected) {
+      return false;
+    }
+
+    if (typeof wid === "undefined") {
+      wid = activeWindow;
+    }
+
+    const surface = findSurface(wid);
+    keyboard.process(ev, surface);
+    return false;
+  };
+
+  // Injects a mouse browser event
+  const mouse_inject = (ev, wid) => {
     if (!connected) {
       return;
     }
@@ -219,8 +234,7 @@ export const createClient = (defaultConfig = {}, env = {}) => {
     }
 
     const surface = findSurface(wid);
-    keyboard.process(ev, surface);
-    mouse.process(ev, surface);
+    return mouse.process(ev, surface);
   };
 
   // Kills a window/surface
@@ -517,7 +531,8 @@ export const createClient = (defaultConfig = {}, env = {}) => {
     disconnect,
     ping,
     send,
-    inject,
+    key_inject,
+    mouse_inject,
     status: () => getState(),
     on: (...args) => bus.on(...args),
     off: (name, callback) => {
