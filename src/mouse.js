@@ -178,10 +178,12 @@ const getMouse = (ev, surface) => {
     relY = top - surface.y;
   }
 
-  const x = parseInt(ev.clientX - relX, 10);
-  const y = parseInt(ev.clientY - relY, 10);
+  let x = parseInt(ev.clientX - relX, 10);
+  let y = parseInt(ev.clientY - relY, 10);
   const buttons = [];
   const button = getMouseButton(ev);
+  x = Math.round(x * window.devicePixelRatio);
+  y = Math.round(y * window.devicePixelRatio);
 
   return { x, y, button, buttons };
 };
