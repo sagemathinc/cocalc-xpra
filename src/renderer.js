@@ -87,7 +87,7 @@ export const createRenderer = ({ wid, canvas, context }, send) => {
       const now = timestamp();
       const diff = now - start;
 
-      if (diff > 1000) {
+      if (diff > 5000) {
         console.warn("A frame was very late....");
 
         /* FIXME
