@@ -110,6 +110,9 @@ export const arraybufferBase64 = (uintArray, skip = 10400) => {
 
 // python-lz4 inserts the length of the uncompressed data as an int
 // at the start of the stream
+export function lz4decode(data) {
+  throw Error("lz4decode: not implemented");
+}
 /*
 export const lz4decode = data => {
   const d = data.subarray(0, 4);
@@ -172,8 +175,8 @@ export const hexUUID = () => {
 };
 
 export const calculateScreens = (width, height, dpi) => {
-  const wmm = Math.round(width * 25.4 / dpi);
-  const hmm = Math.round(height * 25.4 / dpi);
+  const wmm = Math.round((width * 25.4) / dpi);
+  const hmm = Math.round((height * 25.4) / dpi);
 
   const monitor = ["Canvas", 0, 0, width, height, wmm, hmm];
   const screen = [
